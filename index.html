@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bicycle Game</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        background-color: #87ceeb;
+        font-family: Arial, sans-serif;
+      }
+
+      #gameCanvas {
+        display: block;
+        margin: 0 auto;
+        background-color: #32cd32;
+        border: 3px solid #000;
+      }
+
+      .game-over {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 30px;
+        color: white;
+        font-weight: bold;
+        text-align: center;
+        display: none;
+      }
+
+      .score {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        font-size: 20px;
+        color: white;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="gameCanvas" width="500" height="700"></canvas>
+    <div class="game-over" id="gameOverText">Game Over! Press R to Restart</div>
+    <div class="score" id="scoreText">Score: 0</div>
+
+    <script>
+      const canvas = document.getElementById("gameCanvas");
+      const ctx = canvas.getContext("2d");
+
+      const bicycleWidth = 50;
+      const bicycleHeight = 80;
+      let bicycleX = canvas.width / 2 - bicycleWidth / 2;
+      let bicycleY = canvas.height - bicycleHeight - 10;
+      let bicycleSpeed = 5;
+      let obstacles = [];
+      let obstacleSpeed = 3;
+      let score = 0;
+      let gameOver = false;
+
+      // Bicycle object
+      const bicycle = {
+        width: bicycleWidth,
+        height: bicycleHeight,
+        x: bicycleX,
+        y: bicycleY,
+        speed: bicycleSpeed,
+        draw: function () {
+          ctx.fillStyle = "blue";
+          ctx.fillRect(this.x, this.y, this.width, this.height); // Drawing the bicycle
+        },
+        move: function (direction) {
+          if (direction === "left" && this.x > 0) this.x -= this.speed;
+          if (direction === "right" && this.x < canvas.width - this.width)
+            this.x += this.speed;
+        },
+      };
+
+      // Obstacle object
+      function createObstacle() {
+        const obstacleWidth = Math.floor(Math.random() * 150) + 50;
+        const obstacleHeight = 20;
+        const xPos = Math.floor(Math.random() * (canvas.width - obstacleWidth));
+        obstacles.push({
+          x: xPos,
+          y: -obstacleHeight,
+          width: obstacleWidth,
+          height: obstacleHeight,
+        });
+      }
+
+      function moveObstacles() {
+        for (let i = 0; i < obstacles.length; i++) {
+          obstacles[i].y += obstacleSpeed;
+          if (obstacles[i].y > canvas.height) {
+            obstacles.splice(i, 1);
+            score++;
+            document.getElementById("scoreText").innerText = "Score: " + score;
+          }
+        }
+      }
+
+      function checkCollisions() {
+        for (let i = 0; i < obstacles.length; i++) {
+          if (
+            bicycle.x < obstacles[i].x + obstacles[i].width &&
+            bicycle.x + bicycle.width > obstacles[i].x &&
+            bicycle.y < obstacles[i].y + obstacles[i].height &&
+            bicycle.y + bicycle.height > obstacles[i].y
+          ) {
+            gameOver = true;
+            document.getElementById("gameOverText").style.display = "block";
+          }
+        }
+      }
+
+      function drawObstacles() {
+        ctx.fillStyle = "red";
+        for (let i = 0; i < obstacles.length; i++) {
+          ctx.fillRect(
+            obstacles[i].x,
+            obstacles[i].y,
+            obstacles[i].width,
+            obstacles[i].height
+          );
+        }
+      }
+
+      function update() {
+        if (gameOver) return;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        bicycle.draw();
+        drawObstacles();
+        moveObstacles();
+        checkCollisions();
+      }
+
+      function gameLoop() {
+        if (gameOver) return;
+        update();
+        requestAnimationFrame(gameLoop);
+      }
+
+      function restartGame() {
+        bicycle.x = canvas.width / 2 - bicycleWidth / 2;
+        bicycle.y = canvas.height - bicycleHeight - 10;
+        obstacles = [];
+        obstacleSpeed = 3;
+        score = 0;
+        document.getElementById("scoreText").innerText = "Score: " + score;
+        gameOver = false;
+        document.getElementById("gameOverText").style.display = "none";
+        gameLoop();
+      }
+
+      // Handle key events for movement
+      document.addEventListener("keydown", function (event) {
+        if (event.key === "ArrowLeft") {
+          bicycle.move("left");
+        }
+        if (event.key === "ArrowRight") {
+          bicycle.move("right");
+        }
+        if (event.key === "r" && gameOver) {
+          restartGame();
+        }
+      });
+
+      // Create obstacles every 2 seconds
+      setInterval(function () {
+        if (!gameOver) {
+          createObstacle();
+        }
+      }, 2000);
+
+      // Start the game loop
+      gameLoop();
+    </script>
+  </body>
+</html>
